@@ -73,7 +73,11 @@ function viewAllRoles(){
     });
 }
 function viewAllEmployees(){
-
+    const sql = `SELECT * FROM employees_db.employees`;
+    db.query(sql, (err, data) => {
+        console.table(data);
+        init();
+    });
 }
 function addDept(){
 
