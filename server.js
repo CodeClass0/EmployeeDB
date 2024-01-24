@@ -63,11 +63,14 @@ async function viewAllDepts(){
     db.query(sql, (err, data) => {
         console.table(data);
         init();
-    });
-    
+    });   
 }
 function viewAllRoles(){
-
+    const sql = `SELECT * FROM employees_db.roles`;
+    db.query(sql, (err, data) => {
+        console.table(data);
+        init();
+    });
 }
 function viewAllEmployees(){
 
