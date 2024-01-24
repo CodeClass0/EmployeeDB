@@ -1,5 +1,5 @@
-INSERT INTO employees_db.departments(id, department_name)
-VALUES (2, "Engineering"), (1, "Sales"), (3, "Finance"), (4, "Legal");
+INSERT INTO employees_db.departments(department_name)
+VALUES ("Sales"), ("Engineering"), ("Finance"), ("Legal");
 
 INSERT INTO employees_db.roles(id, title, salary, department_id)
 VALUES  (1,"Sales Lead", 100000, 1), 

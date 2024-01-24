@@ -80,7 +80,20 @@ function viewAllEmployees(){
     });
 }
 function addDept(){
-
+    inquirer.prompt([
+        {
+            type: 'input',
+            message: "Enter the Department Name: ",
+            name: "department_name"
+        }
+    ]).then(function (answer){
+        console.log(answer);
+        const sql = `INSERT INTO employees_db.departments(department_name)
+        VALUES ("${answer.department_name}")`;
+        db.query(sql, (err, data) => {
+            viewAllDepts();
+        });
+    });
 }
 function addRole(){
 
