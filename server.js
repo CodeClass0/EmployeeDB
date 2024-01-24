@@ -1,18 +1,18 @@
 const inquirer = require("inquirer");
-const express = require("express");
-const app = express();
-const api = require("./routes/api");
 const mysql = require("mysql2");
 
-let port = process.env.PORT || 3001;
-app.use(express.json());
-app.use(express.urlencoded({ extended: true}));
-app.use('/api', api);
-app.use(express.static("public"));
-
-
+const db =  mysql.createConnection(
+    {
+    host: "localhost",
+    user: "root",
+    password: "root",
+    database: "employees_db",
+    },
+    console.log("Connected to db")
+);
 
 async function getInput(){
+    console.log("Welcome!");
     return inquirer.prompt([
         {
             type: 'list',
@@ -35,9 +35,12 @@ async function init(){
         let answer = data.choice;
         console.log("Prompting complete.");
         console.log("User selected " + answer);
+        callDb(answer);
+    }));
+}
 
+async function callDb(answer){
         //Sort answers, call functions that correspond
-
         if (answer === "View all departments"){
             viewAllDepts();
         }else if (answer === "View all roles"){
@@ -51,14 +54,17 @@ async function init(){
         }else if (answer === "Update an employee roll"){
             updateEmployeeRoll();
         }
-    }));
 }
 
 
 
-
-function viewAllDepts(){
-
+async function viewAllDepts(){
+    const sql = `SELECT * FROM employees_db.departments`;
+    db.query(sql, (err, data) => {
+        console.table(data);
+        init();
+    });
+    
 }
 function viewAllRoles(){
 
@@ -87,8 +93,3 @@ init();
 
 
 
-app.listen(port, () => {
-    console.log(`App listening on PORT ${port}`);
-})
-
-module.exports=app;
