@@ -201,43 +201,43 @@ async function addEmployee(){
 
 
 
-//===============================
-//This block ensures that we wait for the query to finish before returning an id
-function resolveId (str){
-    return new Promise((resolve) => {
-        db.query(str,  (err, data) => {
-            resolve(data[0].id);
-        });
-    });
-}
-async function asyncCallId(str){
-    console.log("Calling");
-    const result = await resolveId(str);
-    console.log("logging result " + result);
-    return result;
-}
-//===============================
+// //===============================
+// //This block ensures that we wait for the query to finish before returning an id
+// function resolveId (str){
+//     return new Promise((resolve) => {
+//         db.query(str,  (err, data) => {
+//             resolve(data[0].id);
+//         });
+//     });
+// }
+// async function asyncCallId(str){
+//     console.log("Calling");
+//     const result = await resolveId(str);
+//     console.log("logging result " + result);
+//     return result;
+// }
+// //===============================
 
 
 
 
-//This block ensures that the query finishes before continuing in the calling function
-//===============================
-function resolveAdd(str){
-    return new Promise((resolve) => {
-        db.query(str,  (err, data) => {
-            resolve(console.log(str));
-        });
-    });
-}
+// //This block ensures that the query finishes before continuing in the calling function
+// //===============================
+// function resolveAdd(str){
+//     return new Promise((resolve) => {
+//         db.query(str,  (err, data) => {
+//             resolve(console.log(str));
+//         });
+//     });
+// }
 
-async function asyncCallAdd(str){
-    console.log("Calling");
-    const result = await resolveAdd(str);
-    console.log("logging result " + result);
-    return result;
-}
-//===============================
+// async function asyncCallAdd(str){
+//     console.log("Calling");
+//     const result = await resolveAdd(str);
+//     console.log("logging result " + result);
+//     return result;
+// }
+// //===============================
 
 
 
