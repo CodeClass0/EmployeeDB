@@ -54,9 +54,9 @@ async function callDb(answer){
             addRole();
         }else if (answer === "Add an employee"){
             addEmployee();
-        }else if (answer === "Update an employee roll"){
+        }else if (answer === "Update an employee role"){
             updateEmployeeRole();
-        }
+        };
 }
 
 
@@ -99,7 +99,15 @@ function addDept(){
     });
 }
 function addRole(){
-    inquirer.prompt([
+    let departmentNameArray = [];
+    const sql = `SELECT * FROM employees_db.departments`;
+    db.query(sql, (err, data) => {
+        for (let i = 0; i<data.length; i++){
+            departmentNameArray.push(data[i].department_name);
+        }
+    });
+
+inquirer.prompt([
         {
             type: 'input',
             message: "Enter the Role Name: ",
@@ -111,17 +119,21 @@ function addRole(){
             name: "role_salary"
         },
         {
-            type: 'input',
-            message: "Enter the Department for this Role: ",
-            name: "role_department"
+            type: 'list',
+            message: "Select a department for this role: ",
+            name: "role_department",
+            choices: departmentNameArray
         }
     ]).then(function (userResponse){
-        
-        buildNewRole(userResponse);
+        const str = `INSERT INTO employees_db.roles (title, salary, department_id)
+        VALUES("${userResponse.role_name}", ${userResponse.role_salary}, (SELECT id FROM employees_db.departments WHERE department_name LIKE "${userResponse.role_department}"));`;
+        db.query(str, (err, data) => {
+            console.log("New Role Added");
+            viewAllRoles();
+        });
 
     });
 }
-
 async function addEmployee(){
     let employeeArray = [];
     const employeeSearch = `SELECT * FROM employees_db.employees`;
@@ -240,6 +252,7 @@ async function updateEmployeeRole(){
         for (let i = 0; i<data.length; i++){
             employeeArray.push(data[i].first_name + " " + data[i].last_name);
         }
+        console.log("Employee Array Built")
     });
 
     //Build array of roles
@@ -249,39 +262,45 @@ async function updateEmployeeRole(){
         for (let i = 0; i<data.length; i++){
             roleArray.push(data[i].title);
         }
+        console.log("Role Array Built");
     });
 
-    
+
+
+    // let received = await updateInput(roleArray, employeeArray);
+
     //Prompt User    
-    let userResponse = await inquirer.prompt([
-        {
-            type: 'list',
-            message: "Select the Employee to update role: ",
-            name: "employee",
-            choices: employeeArray
-        },
-        {
-            type: 'list',
-            message: "Select the new Role: ",
-            name: "role",
-            choices: roleArray
-        }
-    ]);
+    // let userResponse = await inquirer.prompt([
+    //     {
+    //         type: 'list',
+    //         message: "Select the Employee to update role: ",
+    //         name: "employee",
+    //         choices: employeeArray
+    //     },
+    //     {
+    //         type: 'list',
+    //         message: "Select the new Role: ",
+    //         name: "role",
+    //         choices: roleArray
+    //     }
+    // ]);
     
     //Here we get the ID associated with the employee's role
-    let roleId = await asyncCallId(`SELECT id FROM employees_db.roles WHERE title =  "${userResponse.role}"`);
+    let roleId = await asyncCallId(`SELECT id FROM employees_db.roles WHERE title =  "${received.role}"`);
     console.log(roleId);
 
     //Here we update that employee in the db with the new role Id.
     await asyncCallAdd(`UPDATE employees_db.employees
     SET role_id = ${roleId}
-    WHERE CONCAT (first_name, " ", last_name) LIKE "${userResponse.employee}" LIMIT 1;`);
+    WHERE CONCAT (first_name, " ", last_name) LIKE "${received.employee}" LIMIT 1;`);
     console.log("Employee Role Updated");
     viewAllEmployees();
 }
 
 
  function buildNewRole(answer){
+    
+
     let rollId;
     const sql = `SELECT department_name, id FROM employees_db.departments`;
     db.query(sql, (err, data) => {
@@ -290,7 +309,7 @@ async function updateEmployeeRole(){
         for (let i = 0; i < data.length; i++){
             if (data[i].department_name.toLowerCase() === answer.role_department.toLowerCase()){
                 console.log(data[i]);
-                console.log("THERE IS AN EXISTING DEPT");
+                console.log("There is an existing department");
                 rollId = data[i].id;
 
                 //If the new role has an existing department, continue with adding the role to the db while assigning
@@ -334,6 +353,22 @@ async function updateEmployeeRole(){
     });
 }
 
+async function updateInput(roles, employees){
+    return inquirer.prompt([
+        {
+            type: 'list',
+            message: "Select the Employee to update role: ",
+            name: "employee",
+            choices: employees
+        },
+        {
+            type: 'list',
+            message: "Select the new Role: ",
+            name: "role",
+            choices: roles
+        }
+    ]);
+}
 
 init();
 
