@@ -1,7 +1,8 @@
 const inquirer = require("inquirer");
 const mysql = require("mysql2");
 
-const db =  mysql.createConnection(
+
+const db = mysql.createConnection(
     {
     host: "localhost",
     user: "root",
@@ -24,7 +25,7 @@ async function getInput(){
                 "Add a department", 
                 "Add a role", 
                 "Add an employee",
-                "Update an employee roll"
+                "Update an employee role"
             ]
         }
     ])
@@ -121,7 +122,7 @@ function addRole(){
     });
 }
 
-function addEmployee(){
+async function addEmployee(){
     let employeeArray = [];
     const employeeSearch = `SELECT * FROM employees_db.employees`;
     db.query(employeeSearch, (err, data) => {
@@ -138,7 +139,7 @@ function addEmployee(){
         }
     });
 
-    inquirer.prompt([
+    let userResponse = await inquirer.prompt([
         {
             type: 'input',
             message: "Enter the Employee's First Name: ",
@@ -161,36 +162,124 @@ function addEmployee(){
             name: "employee_manager",
             choices: employeeArray
         },
-    ]).then(function (userResponse){
-        let managerId;
-        let roleId;
-        const roleIDSearch = `SELECT id FROM employees_db.roles WHERE title =  "${userResponse.employee_role}"`;
-        db.query(roleIDSearch, (err, data) => {
-            roleId = data[0].id;
-            console.log(roleId);
-            return roleId;
-        });
+    ]);
 
-        const managerIDSearch = `SELECT id FROM employees_db.employees WHERE CONCAT (first_name, " ", last_name) LIKE "${userResponse.employee_manager}"`;
-        db.query(managerIDSearch, (err, data) => {
-            managerId = data[0].id;
-            console.log(managerId);
-            return managerId;
-        });
+    // console.log(userResponse.employee_firstName);
+    // console.log(userResponse.employee_lastName);
+    // console.log(userResponse.employee_role);
+    // console.log(userResponse.employee_manager);
 
-        const str = `INSERT INTO employees_db.employees(first_name, last_name, role_id, manager_id)
-        VALUES  ("${userResponse.employee_firstName}", "${userResponse.employee_lastName}", 
-        ${roleId}, ${managerId})`
-        db.query(str, (err, data) => {
-            console.log(str);
-        });
+    //Here we get the ID associated with the employee's manager
+    let manId = await asyncCallId(`SELECT id FROM employees_db.employees WHERE CONCAT (first_name, " ", last_name) LIKE "${userResponse.employee_manager}"`);
+    // console.log("man ID = " + manId);
 
+    //Here we get the ID associated with the employee's role
+    let roleId = await asyncCallId(`SELECT id FROM employees_db.roles WHERE title =  "${userResponse.employee_role}"`);
+    // console.log("role ID = " + roleId);
+
+
+    //Here we put it together to insert the employee into the db.
+    await asyncCallAdd(`INSERT INTO employees_db.employees(first_name, last_name, role_id, manager_id)
+    VALUES  ("${userResponse.employee_firstName}", "${userResponse.employee_lastName}", 
+    ${roleId}, ${manId})`);
+    console.log("Employee Added");
+    viewAllEmployees();
+}
+
+
+
+
+//===============================
+//This block ensures that we wait for the query to finish before returning an id
+function resolveId (str){
+    return new Promise((resolve) => {
+        db.query(str,  (err, data) => {
+            resolve(data[0].id);
+        });
+    });
+}
+async function asyncCallId(str){
+    console.log("Calling");
+    const result = await resolveId(str);
+    console.log("logging result " + result);
+    return result;
+}
+//===============================
+
+
+
+
+//This block ensures that the query finishes before continuing in the calling function
+//===============================
+function resolveAdd(str){
+    return new Promise((resolve) => {
+        db.query(str,  (err, data) => {
+            resolve(console.log(str));
+        });
     });
 }
 
-function updateEmployeeRole(){
-    
+async function asyncCallAdd(str){
+    console.log("Calling");
+    const result = await resolveAdd(str);
+    console.log("logging result " + result);
+    return result;
 }
+//===============================
+
+
+
+
+
+
+async function updateEmployeeRole(){
+    //Build array of employees
+    let employeeArray = [];
+    const employeeSearch = `SELECT * FROM employees_db.employees`;
+    db.query(employeeSearch, (err, data) => {
+        for (let i = 0; i<data.length; i++){
+            employeeArray.push(data[i].first_name + " " + data[i].last_name);
+        }
+    });
+
+    //Build array of roles
+    let roleArray = [];
+    const roleSearch = `SELECT * FROM employees_db.employees`;
+    db.query(roleSearch, (err, data) => {
+        for (let i = 0; i<data.length; i++){
+            roleArray.push(data[i].title);
+        }
+    });
+
+    
+    //Prompt User    
+    let userResponse = await inquirer.prompt([
+        {
+            type: 'list',
+            message: "Select the Employee to update role: ",
+            name: "employee",
+            choices: employeeArray
+        },
+        {
+            type: 'list',
+            message: "Select the new Role: ",
+            name: "role",
+            choices: roleArray
+        }
+    ]);
+    
+    //Here we get the ID associated with the employee's role
+    let roleId = await asyncCallId(`SELECT id FROM employees_db.roles WHERE title =  "${userResponse.role}"`);
+    console.log(roleId);
+
+    //Here we update that employee in the db with the new role Id.
+    await asyncCallAdd(`UPDATE employees_db.employees
+    SET role_id = ${roleId}
+    WHERE CONCAT (first_name, " ", last_name) LIKE "${userResponse.employee}" LIMIT 1;`);
+    console.log("Employee Role Updated");
+    viewAllEmployees();
+}
+
 
  function buildNewRole(answer){
     let rollId;
