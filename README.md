@@ -10,6 +10,7 @@ This application is a simple employee DB interface that allows for an administra
 <a id="item-one"></a>
 ## Installation
 The installation instructions are simple, clone this repository locally and install necessary packages. 
+View a walkthrough video [here](https://app.screencastify.com/v3/watch/3iKITpfCpxK73CTvWdsG)
 <a id="item-two"></a>
 ## Usage
 Use the application in your terminal.
