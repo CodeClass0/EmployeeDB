@@ -55,7 +55,8 @@ async function callDb(answer){
         }else if (answer === "Add an employee"){
             addEmployee();
         }else if (answer === "Update an employee role"){
-            updateEmployeeRole();
+            // updateEmployeeRole();
+            buildEmployeeArray();
         };
 }
 
@@ -241,78 +242,57 @@ async function asyncCallAdd(str){
 
 
 
+let employeeArrayGlobal = [];
+let roleArrayGlobal = [];
 
-
-async function updateEmployeeRole(){
-    //Build array of employees
-    let employeeArray = [];
+async function buildEmployeeArray(){
     const employeeSearch = `SELECT * FROM employees_db.employees`;
     db.query(employeeSearch, (err, data) => {
         for (let i = 0; i<data.length; i++){
-            employeeArray.push(data[i].first_name + " " + data[i].last_name);
+            employeeArrayGlobal.push(data[i].first_name + " " + data[i].last_name);
         }
-        console.log("Employee Array Built")
+        employeeArrayGlobal.push("No Manager");
+
+        buildRoleArray();
     });
-
-    //Build array of roles
-    let roleArray = [];
-    const roleSearch = `SELECT * FROM employees_db.employees`;
-    db.query(roleSearch, (err, data) => {
-        for (let i = 0; i<data.length; i++){
-            roleArray.push(data[i].title);
-        }
-        console.log("Role Array Built");
-    });
-
-
-
-    // let received = await updateInput(roleArray, employeeArray);
-
-    //Prompt User    
-    // let userResponse = await inquirer.prompt([
-    //     {
-    //         type: 'list',
-    //         message: "Select the Employee to update role: ",
-    //         name: "employee",
-    //         choices: employeeArray
-    //     },
-    //     {
-    //         type: 'list',
-    //         message: "Select the new Role: ",
-    //         name: "role",
-    //         choices: roleArray
-    //     }
-    // ]);
-    
-    //Here we get the ID associated with the employee's role
-    let roleId = await asyncCallId(`SELECT id FROM employees_db.roles WHERE title =  "${received.role}"`);
-    console.log(roleId);
-
-    //Here we update that employee in the db with the new role Id.
-    await asyncCallAdd(`UPDATE employees_db.employees
-    SET role_id = ${roleId}
-    WHERE CONCAT (first_name, " ", last_name) LIKE "${received.employee}" LIMIT 1;`);
-    console.log("Employee Role Updated");
-    viewAllEmployees();
 }
 
+async function buildRoleArray(){
+    const roleSearch = `SELECT * FROM employees_db.roles`;
+    db.query(roleSearch, (err, data) => {
+        for (let i = 0; i<data.length; i++){
+            roleArrayGlobal.push(data[i].title);
+        }
+        updateEmployeeRole();
+    });
+}
 
-async function updateInput(roles, employees){
-    return inquirer.prompt([
+async function updateEmployeeRole(){
+
+    let userResponse = await inquirer.prompt([
         {
             type: 'list',
-            message: "Select the Employee to update role: ",
-            name: "employee",
-            choices: employees
+            message: "Select the Employee to update: ",
+            name: "employee_name",
+            choices: employeeArrayGlobal
         },
         {
             type: 'list',
-            message: "Select the new Role: ",
-            name: "role",
-            choices: roles
-        }
+            message: "Select the Employee's Role: ",
+            name: "employee_role",
+            choices: roleArrayGlobal
+        },
+
     ]);
+        const str =`UPDATE employees_db.employees
+        SET role_id = (SELECT id FROM employees_db.roles WHERE title LIKE "${userResponse.employee_role}")
+        WHERE CONCAT  (first_name, " ", last_name) LIKE "${userResponse.employee_name}" LIMIT 1;`;
+        db.query(str, (err, data) => {
+            console.log("Employee Role Updated");
+            viewAllEmployees();
+        });
 }
+
 
 init();
 
